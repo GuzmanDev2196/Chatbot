@@ -1,0 +1,192 @@
+:root {
+  --eg-orange: #F25C05;
+  --eg-bubble-bg: #E5E5E5;
+  --eg-panel-bg: #FFFDFD;
+  --eg-typing-bg: #F3F4F6;
+  --eg-text-dark: #1F2937;   /* text-gray-800 */
+  --eg-text-strong: #111827; /* text-gray-900 */
+  --eg-text-muted: #6B7280;  /* text-gray-500 */
+  --eg-border: #D1D5DB;      /* border-gray-300 */
+}
+
+/* ---------- Botón flotante ---------- */
+#eg-chatbot-button {
+  position: fixed;
+  bottom: 20px;
+  right: 40px;
+  width: 68px;
+  height: 68px;
+  border-radius: 9999px;
+  background: var(--eg-orange);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 9999;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+#eg-chatbot-button img {
+  width: 75%;
+  height: 75%;
+  border-radius: 9999px;
+  object-fit: cover;
+}
+
+/* ---------- Fondo / overlay del modal ---------- */
+#eg-chatbot-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: none;
+}
+#eg-chatbot-overlay.eg-open {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding-bottom: 95px;
+  padding-right: 40px;
+}
+
+/* ---------- Panel del chat ---------- */
+#eg-chatbot-panel {
+  background: var(--eg-panel-bg);
+  border-radius: 24px;
+  height: 90%;
+  width: 100%;
+  max-width: 384px; /* max-w-sm */
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- Header naranjo ---------- */
+#eg-chatbot-header {
+  background: var(--eg-orange);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  flex-shrink: 0;
+}
+#eg-chatbot-header .eg-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  padding: 8px;
+}
+#eg-chatbot-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+/* ---------- Área de mensajes ---------- */
+#eg-chatbot-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  padding-bottom: 8px;
+}
+
+/* ---------- Burbujas ---------- */
+.eg-row {
+  display: flex;
+  margin: 6px 0;
+  align-items: flex-end;
+}
+.eg-row.eg-bot { justify-content: flex-start; }
+.eg-row.eg-user { justify-content: flex-end; }
+
+.eg-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  margin-right: 8px;
+  margin-bottom: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.eg-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.eg-bubble-text {
+  max-width: 70%;
+  padding: 10px 16px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.eg-bubble-text.eg-bot {
+  background: var(--eg-bubble-bg);
+  border-bottom-left-radius: 0;
+  color: var(--eg-text-dark);
+}
+.eg-bubble-text.eg-user {
+  background: var(--eg-orange);
+  border-bottom-right-radius: 0;
+  color: #fff;
+}
+
+.eg-bubble-text a {
+  color: #2563EB;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+/* ---------- Opciones ---------- */
+.eg-options {
+  max-width: 70%;
+  background: var(--eg-bubble-bg);
+  border-radius: 16px;
+  border-bottom-left-radius: 0;
+  overflow: hidden;
+}
+.eg-option-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--eg-border);
+  font-size: 14px;
+  color: var(--eg-text-strong);
+  cursor: pointer;
+}
+.eg-option-btn:last-child { border-bottom: none; }
+.eg-option-btn:active { background: #D1D5DB; }
+
+/* ---------- Typing ---------- */
+.eg-typing {
+  background: var(--eg-typing-bg);
+  padding: 12px 16px;
+  border-radius: 16px;
+  border-bottom-left-radius: 0;
+  display: flex;
+  align-items: center;
+}
+.eg-typing span {
+  color: var(--eg-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}

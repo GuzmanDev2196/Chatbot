@@ -1,0 +1,25 @@
+.env
+.env.*
+config.local.php
+config.php
+
+# Mac
+.DS_Store
+.AppleDouble
+.ls-cache
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Visual Studio Code 
+.vscode/
+!.vscode/settings.json
+*.code-workspace
+
+# PhpStorm / IntelliJ
+.idea/
+
+*.log
+*.tmp
