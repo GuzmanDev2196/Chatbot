@@ -4,11 +4,14 @@
   var CFG = window.EG_CHATBOT_CONFIG || {};
   var LOGO_URL = CFG.logoUrl || '/themes/YOUR_THEME/assets/img/chatbot/logo.png';
   var AGENT_URL = CFG.agentUrl || '/themes/YOUR_THEME/assets/img/chatbot/agente-de-soporte.png';
+  var PROXY_URL = CFG.proxyUrl || '/modules/egchatbot/proxy/api-proxy.php';
 
+  /* Preguntas y categorías */
   var faqCategories = [
     { id: 'despacho', label: 'Despacho', emoji: '🚚' },
     { id: 'contacto', label: 'Contacto', emoji: '📱' },
     { id: 'cotizacion', label: 'Cotización', emoji: '🧾' },
+    { id: 'busqueda de producto', label: 'Búsqueda de producto', emoji: '🔎' },
     { id: 'otro', label: 'Otro', emoji: '❓' }
   ];
 
@@ -122,7 +125,7 @@
   function greetingText() {
     var hour = new Date().getHours();
     var saludo = hour < 12 ? 'Buenos días' : hour < 20 ? 'Buenas tardes' : 'Buenas noches';
-    return '¡' + saludo + '! 👋 Soy el asistente de Electricidad Guzman. Elige una opción para ayudarte:';
+    return '¡' + saludo + '! 👋 Soy el asistente de Electricidad Guzman. Elige una opción para ayudarte, o escribe abajo el nombre de un producto para buscarlo:';
   }
 
   function categoryOptions() {
@@ -151,13 +154,21 @@
   function selectOption(option) {
     var now = Date.now();
 
-    if (option.action === 'category') {
+    if (option.id === 'busqueda de producto') {
+      els.inputBar.style.display = 'flex';
+      setTimeout(function () {
+        els.input.focus();
+      }, 100);
+      state.messages.push({ id: 'u-' + now, sender: 'user', text: option.label });
+    } else if (option.action === 'category') {
+      els.inputBar.style.display = 'none';
       state.messages.push({ id: 'u-' + now, sender: 'user', text: option.label });
     } else if (option.action === 'faq') {
       var faq = faqData.filter(function (f) { return f.id === option.id; })[0];
       if (!faq) return;
       state.messages.push({ id: 'u-' + now, sender: 'user', text: faq.question });
     } else if (option.action === 'back') {
+      els.inputBar.style.display = 'none'; //oculta el input
       state.messages.push({ id: 'u-' + now, sender: 'user', text: 'Volver' });
     }
 
@@ -187,7 +198,79 @@
     render();
   }
 
-  /* FORMATEO DE TEXTO Detecta URLs, emails y teléfonos y los vuelve clicables */
+  /* busqueda de productos (via api-proxy.php) */
+  function doProductSearch(query) {
+    var trimmed = (query || '').trim();
+    if (!trimmed) return;
+
+    var now = Date.now();
+    state.messages.push({ id: 'u-' + now, sender: 'user', text: trimmed });
+    state.isTyping = true;
+    render();
+
+    var url = PROXY_URL + '?action=search&q=' + encodeURIComponent(trimmed);
+
+    fetch(url)
+      .then(function (res) {
+        if (!res.ok) throw new Error('bad-status');
+        return res.json();
+      })
+      .then(function (data) {
+        var results = (data && data.results) || [];
+
+        if (results.length === 0) {
+          state.messages.push({
+            id: 'b-' + (now + 1),
+            sender: 'bot',
+            text: 'No encontré productos que coincidan con "' + trimmed + '". Prueba con otro nombre.'
+          });
+        } else {
+          // El navegador siempre construye la URL de imagen usando su propio
+          // PROXY_URL, para no depender de rutas relativas que envíe el backend.
+          results.forEach(function (r) {
+            r.imageUrl = PROXY_URL + '?action=image&id=' + r.id;
+          });
+          state.messages.push({ id: 'b-' + (now + 1), sender: 'bot', text: 'Encontré esto:' });
+          state.messages.push({ id: 'b-' + (now + 2), sender: 'bot', products: results });
+        }
+        state.isTyping = false;
+        render();
+      })
+      .catch(function () {
+        state.messages.push({
+          id: 'b-' + (now + 1),
+          sender: 'bot',
+          text: 'Tuve un problema consultando el catálogo. Intenta nuevamente en unos minutos.'
+        });
+        state.isTyping = false;
+        render();
+      });
+  }
+
+  function selectProduct(product) {
+    var now = Date.now();
+    state.messages.push({ id: 'u-' + now, sender: 'user', text: 'Ver: ' + product.name });
+
+    var stockText;
+    if (product.stock === null || product.stock === undefined) {
+      stockText = 'No disponible por el momento';
+    } else if (product.stock > 0) {
+      stockText = product.stock + ' unidades disponibles';
+    } else {
+      stockText = 'Sin stock por ahora';
+    }
+
+    var priceText = (product.price === null || product.price === undefined)
+      ? 'Consultar precio'
+      : '$' + Number(product.price).toLocaleString('es-CL');
+
+    var detailText = 'Nombre: ' + product.name + '\nPrecio: ' + priceText + '\nStock: ' + stockText;
+    state.messages.push({ id: 'b-' + (now + 1), sender: 'bot', text: detailText });
+    render();
+  }
+
+  /* Formateo de texto 
+   * Detecta URLs, emails y teléfonos y los vuelve clicables */
   var COMBINED_REGEX = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|(?:\+\d{1,3}\s?)?\d{8,11})/g;
   var EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   var URL_RE = /^(https?:\/\/[^\s]+|www\.[^\s]+)$/;
@@ -225,7 +308,7 @@
     });
   }
 
-  /* RENDER (DOM) */
+  /* Render (DOM) */
   var els = {};
 
   function buildSkeleton() {
@@ -260,8 +343,24 @@
     var scroll = document.createElement('div');
     scroll.id = 'eg-chatbot-scroll';
 
+    var inputBar = document.createElement('div');
+    inputBar.id = 'eg-chatbot-inputbar';
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.id = 'eg-chatbot-input';
+    input.placeholder = 'Buscar un producto...';
+    input.autocomplete = 'off';
+    var sendBtn = document.createElement('button');
+    sendBtn.type = 'button';
+    sendBtn.id = 'eg-chatbot-send';
+    sendBtn.setAttribute('aria-label', 'Buscar producto');
+    sendBtn.textContent = '➤';
+    inputBar.appendChild(input);
+    inputBar.appendChild(sendBtn);
+
     panel.appendChild(header);
     panel.appendChild(scroll);
+    panel.appendChild(inputBar);
     overlay.appendChild(panel);
 
     document.body.appendChild(button);
@@ -272,6 +371,11 @@
     els.panel = panel;
     els.closeBtn = closeBtn;
     els.scroll = scroll;
+    els.input = input;
+    els.sendBtn = sendBtn;
+
+    els.inputBar = inputBar;
+    els.inputBar.style.display = 'none'; //para ocultar barra de búsqueda
 
     button.addEventListener('click', open);
     closeBtn.addEventListener('click', close);
@@ -279,6 +383,20 @@
       if (e.target === overlay) close();
     });
     panel.addEventListener('click', function (e) { e.stopPropagation(); });
+
+    function submitSearch() {
+      var val = els.input.value;
+      if (!val.trim()) return;
+      els.input.value = '';
+      doProductSearch(val);
+    }
+    sendBtn.addEventListener('click', submitSearch);
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submitSearch();
+      }
+    });
   }
 
   function createAvatar() {
@@ -310,6 +428,27 @@
         optionsWrap.appendChild(btn);
       });
       row.appendChild(optionsWrap);
+    } else if (message.products) {
+      var productsWrap = document.createElement('div');
+      productsWrap.className = 'eg-products-row';
+      message.products.forEach(function (prod) {
+        var card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'eg-product-card';
+        //var thumb = document.createElement('img');
+        //thumb.className = 'eg-product-thumb';
+        //thumb.src = prod.imageUrl;
+        //thumb.alt = prod.name;
+        //thumb.onerror = function () { thumb.style.visibility = 'hidden'; };
+        var name = document.createElement('span');
+        name.className = 'eg-product-name';
+        name.textContent = prod.name;
+        //card.appendChild(thumb);
+        card.appendChild(name);
+        card.addEventListener('click', function () { selectProduct(prod); });
+        productsWrap.appendChild(card);
+      });
+      row.appendChild(productsWrap);
     } else {
       var bubble = document.createElement('div');
       bubble.className = 'eg-bubble-text ' + (isBot ? 'eg-bot' : 'eg-user');
@@ -355,7 +494,6 @@
     els.overlay.classList.remove('eg-open');
   }
 
-  /* INIT */
   function init() {
     buildSkeleton();
     render();
@@ -367,6 +505,5 @@
     init();
   }
 
-  // Expuesto por si necesitas resetear el chat desde otro script
   window.EGChatbot = { open: open, close: close, reset: resetChat };
 })();

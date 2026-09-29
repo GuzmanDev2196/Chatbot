@@ -3,10 +3,10 @@
   --eg-bubble-bg: #E5E5E5;
   --eg-panel-bg: #FFFDFD;
   --eg-typing-bg: #F3F4F6;
-  --eg-text-dark: #1F2937;   /* text-gray-800 */
-  --eg-text-strong: #111827; /* text-gray-900 */
-  --eg-text-muted: #6B7280;  /* text-gray-500 */
-  --eg-border: #D1D5DB;      /* border-gray-300 */
+  --eg-text-dark: #1F2937; 
+  --eg-text-strong: #111827; 
+  --eg-text-muted: #6B7280;  
+  --eg-border: #D1D5DB;   
 }
 
 /* ---------- Botón flotante ---------- */
@@ -29,8 +29,8 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 #eg-chatbot-button img {
-  width: 75%;
-  height: 75%;
+  width: 85%;
+  height: 85%;
   border-radius: 9999px;
   object-fit: cover;
 }
@@ -189,4 +189,73 @@
   color: var(--eg-text-muted);
   font-size: 12px;
   font-weight: 600;
+}
+
+/* ---------- Barra de búsqueda de productos ---------- */
+#eg-chatbot-inputbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--eg-border);
+  flex-shrink: 0;
+  background: var(--eg-panel-bg);
+}
+#eg-chatbot-input {
+  flex: 1;
+  border: 1px solid var(--eg-border);
+  border-radius: 9999px;
+  padding: 8px 14px;
+  font-size: 14px;
+  outline: none;
+  color: var(--eg-text-dark);
+}
+#eg-chatbot-input:focus {
+  border-color: var(--eg-orange);
+}
+#eg-chatbot-send {
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  background: var(--eg-orange);
+  border: none;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- Tarjetas de producto (resultados de búsqueda) ---------- */
+.eg-products-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 70%;
+}
+.eg-product-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--eg-bubble-bg);
+  border: none;
+  border-radius: 16px;
+  padding: 8px 12px;
+  cursor: pointer;
+  text-align: left;
+}
+.eg-product-card:active { background: #D1D5DB; }
+.eg-product-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #fff;
+  flex-shrink: 0;
+}
+.eg-product-name {
+  font-size: 14px;
+  color: var(--eg-text-strong);
 }
