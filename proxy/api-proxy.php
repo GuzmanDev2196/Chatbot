@@ -485,6 +485,7 @@ if ($action === 'chat') {
         ];
 
         $t = microtime(true);
+        // Consulta a gemini 
         $r = eg_gemini_generate($GEMINI_KEY, $GEMINI_MODELS, $payload);
         error_log(sprintf('Gemini %s: %.1fs HTTP %d', $r['model'], microtime(true) - $t, $r['code']));
 
@@ -537,6 +538,7 @@ if ($action === 'chat') {
                     $searchCount++;
                     $t = microtime(true);
                     error_log('buscar_productos q="' . $q . '"');
+                    // consulta a prestashop
                     $res = eg_search_products($q, $API_BASE, $API_KEY);
                     error_log(sprintf('PrestaShop "%s": %.1fs', $q, microtime(true) - $t));
 
@@ -561,7 +563,8 @@ if ($action === 'chat') {
             } else {
                 $toolResponse = ['error' => 'Función desconocida.'];
             }
-
+            
+            // empaqueta la respuesta de PrestaShop para Gemini
             $responseParts[] = ['functionResponse' => ['name' => $name, 'response' => $toolResponse]];
         }
 
