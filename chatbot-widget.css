@@ -270,3 +270,8 @@
   font-size: 12px;
   color: var(--eg-text-muted);
 }
+
+/* ---------- Tipos de enlace (con clics registrados) ---------- */
+.eg-link::before { margin-right: 4px; text-decoration: none; display: inline-block; }
+.eg-bubble-text a.eg-link-whatsapp { color: #16A34A; }
+.eg-bubble-text a.eg-link-phone    { color: #C2410C; }

@@ -2,9 +2,10 @@
   'use strict';
 
   var CFG = window.EG_CHATBOT_CONFIG || {};
-  var LOGO_URL = CFG.logoUrl || '/themes/YOUR_THEME/assets/img/chatbot/logo.png';
-  var AGENT_URL = CFG.agentUrl || '/themes/YOUR_THEME/assets/img/chatbot/agente-de-soporte.png';
+  var LOGO_URL = CFG.logoUrl;
+  var AGENT_URL = CFG.agentUrl;
   var PROXY_URL = CFG.proxyUrl || '/modules/egchatbot/proxy/api-proxy.php';
+  var TRACK_URL = CFG.trackUrl || 'contador.php';
 
   var ALLOWED_LINK_HOSTS = CFG.allowedLinkHosts || ['guzman.cl'];
   var MAX_INPUT = 300;           
@@ -54,7 +55,7 @@
     {
       id: 'faq-1',
       question: 'Quisiera saber sobre mi despacho',
-      answer: 'Si compró y quiere saber sobre su pedido, le pido que por favor nos mande un correo a servicio alcliente@guzman.cl.',
+      answer: 'Si compró y quiere saber sobre su pedido, le pido que por favor nos mande un correo a servicioalcliente@guzman.cl.',
       category: 'despacho',
       active: true
     },
@@ -103,7 +104,7 @@
     {
       id: 'faq-9',
       question: '¿Cómo puedo contactar a Electricidad Guzman?',
-      answer: 'Puedes contactarnos llamando al (+56) 22 387 1111 o enviando un correo a contacto@guzman.cl.',
+      answer: 'Puedes contactarnos llamando al +56223871111 o enviando un correo a contacto@guzman.cl.',
       category: 'contacto',
       active: true
     },
@@ -242,6 +243,24 @@
       : '$' + Number(price).toLocaleString('es-CL');
   }
 
+  /* envía tipo + destino al servidor */
+  function trackClick(type, target) {
+    try {
+      var body = JSON.stringify({ type: type, target: target });
+      if (navigator.sendBeacon) {
+        var blob = new Blob([body], { type: 'application/json' });
+        var ok = navigator.sendBeacon(TRACK_URL, blob);
+        if (ok) return;
+      }
+      fetch(TRACK_URL, { 
+        method: 'POST', 
+        body: body, 
+        keepalive: true,
+        headers: { 'Content-Type': 'application/json' } 
+      });
+    } catch (e) { /* nunca romper el chat por el contador */ }
+  }
+
   function formatStock(stock) {
     if (stock === null || stock === undefined) return 'No disponible por el momento';
     if (stock > 0) return stock + ' unidades disponibles';
@@ -357,12 +376,12 @@
   var PHONE_RE = /^(\+?\d[\d\s-]{7,})$/;
 
   function appendFormattedText(container, text) {
+    var isWhatsapp = /whats?app/i.test(text);
     var parts = text.split(COMBINED_REGEX);
     parts.forEach(function (part) {
       if (!part) return;
       var trimmed = part.trim();
       if (EMAIL_RE.test(part)) {
-        // Solo correos de dominios propios se vuelven enlace; el resto queda como texto plano
         if (!hostAllowed(part.split('@')[1])) {
           container.appendChild(document.createTextNode(part));
           return;
@@ -371,11 +390,15 @@
         a.href = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(part);
         a.target = '_blank';
         a.rel = 'noopener noreferrer';
+        a.className = 'eg-link eg-link-mail';
         a.textContent = part;
+        // REGISTRO DE CLIC
+        a.addEventListener('click', function () { trackClick('mail', part.toLowerCase()); });
         container.appendChild(a);
       } else if (URL_RE.test(part)) {
-        var url = safeUrl(part.startsWith('www.') ? 'https://' + part : part);
-        if (!url) {   // dominio no permitido: se muestra como texto, no como enlace
+        var rawUrl = part.startsWith('www.') ? 'https://' + part : part;
+        var url = safeUrl(rawUrl);
+        if (!url) {
           container.appendChild(document.createTextNode(part));
           return;
         }
@@ -383,14 +406,31 @@
         a2.href = url;
         a2.target = '_blank';
         a2.rel = 'noopener noreferrer';
+        a2.className = 'eg-link eg-link-web';
         a2.textContent = part;
+        // REGISTRO DE CLIC
+        a2.addEventListener('click', function () { trackClick('web', url); });
         container.appendChild(a2);
       } else if (PHONE_RE.test(trimmed)) {
-        var clean = trimmed.replace(/\s+/g, '');
-        var a3 = document.createElement('a');
-        a3.href = 'tel:' + clean;
-        a3.textContent = part;
-        container.appendChild(a3);
+        var clean = trimmed.replace(/\D/g, '');
+        if (clean.length >= 8) {
+          var a3 = document.createElement('a');
+          if (isWhatsapp || /^569\d{8}$/.test(clean)) { // +569XXXXXXXX = celular chileno -> WhatsApp
+            a3.href = 'https://wa.me/' + clean;
+            a3.target = '_blank';
+            a3.rel = 'noopener noreferrer';
+            a3.className = 'eg-link eg-link-whatsapp';
+            a3.addEventListener('click', function () { trackClick('whatsapp', '+' + clean); });
+          } else {
+            a3.href = 'tel:+' + clean;
+            a3.className = 'eg-link eg-link-phone';
+            a3.addEventListener('click', function () { trackClick('phone', '+' + clean); });
+          }
+          a3.textContent = part;
+          container.appendChild(a3);
+        } else {
+          container.appendChild(document.createTextNode(part));
+        }
       } else {
         container.appendChild(document.createTextNode(part));
       }
